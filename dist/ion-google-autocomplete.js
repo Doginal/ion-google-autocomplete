@@ -106,13 +106,13 @@ angular.module('ion-google-autocomplete')
        * @param required input string
        * @param optional countryCode two letters code
        */
-      searchAddress: function(input, countryCode, type) {
+      searchAddress: function(input, countryCode, types) {
 
         var dfd = $q.defer();
 
         autocompleteService.getPlacePredictions({
           input: input,
-          type: type,
+          types: types,
           componentRestrictions: countryCode ? {
             country: countryCode
           } : undefined
