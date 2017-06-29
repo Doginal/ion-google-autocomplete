@@ -7,7 +7,8 @@ angular.module('ion-google-autocomplete', [])
         scope: {
             location: '=',//Required
             countryCode: '@',//Optional
-            onSelection: '&'//Optional
+            onSelection: '&',//Optional
+            types: '='
         },
         link: function($scope, element) {
         
@@ -16,7 +17,7 @@ angular.module('ion-google-autocomplete', [])
             $scope.search.query = '';
 
             var template = [
-                '<ion-modal-view>',
+                '<ion-modal-view style="width: 90%; height: 90%; top: 5%; left: 5%; right: 5%; bottom: 5%;">',
                 '<ion-header-bar class="item-input-inset">',
                 '<label class="item-input-wrapper">',
                 '<i class="icon ion-search placeholder-icon"></i>',
@@ -34,7 +35,7 @@ angular.module('ion-google-autocomplete', [])
                 '</ion-item>',
                 '</ion-list>',
                 '<div class="padding">',
-                '<img src="https://developers.google.com/maps/documentation/places/images/powered-by-google-on-white.png" style="margin-left: 5px" alt="" />',
+                // '<img src="https://developers.google.com/maps/documentation/places/images/powered-by-google-on-white.png" style="margin-left: 5px" alt="" />',
                 '</div>',
                 '</ion-content>',
                 '</ion-modal-view>'
@@ -80,7 +81,7 @@ angular.module('ion-google-autocomplete', [])
                 
                 if (newValue) {
                     
-                    googleAutocompleteService.searchAddress(newValue, $scope.countryCode).then(function(result) {
+                    googleAutocompleteService.searchAddress(newValue, $scope.countryCode, $scope.types).then(function(result) {
                         
                         $scope.search.error = null;
                         $scope.search.suggestions = result;
@@ -94,51 +95,55 @@ angular.module('ion-google-autocomplete', [])
     }
 }])
 angular.module('ion-google-autocomplete')
-.factory('googleAutocompleteService', ['$q', function ($q) {
+  .factory('googleAutocompleteService', ['$q', function($q) {
 
-  var autocompleteService = new google.maps.places.AutocompleteService();
-  var detailsService = new google.maps.places.PlacesService(document.createElement("input"));
+    var autocompleteService = new google.maps.places.AutocompleteService();
+    var detailsService = new google.maps.places.PlacesService(document.createElement("input"));
 
-  return {
-    /**
-     * Search an address from an input and and option country restriction
-     * @param required input string
-     * @param optional countryCode two letters code
-     */
-    searchAddress: function(input, countryCode) {
+    return {
+      /**
+       * Search an address from an input and and option country restriction
+       * @param required input string
+       * @param optional countryCode two letters code
+       */
+      searchAddress: function(input, countryCode, type) {
 
-      var dfd = $q.defer();
+        var dfd = $q.defer();
 
-      autocompleteService.getPlacePredictions({
-        input: input,
-        componentRestrictions: countryCode ? { country: countryCode } : undefined
-      }, function(result, status) {
-          
-        if (status == google.maps.places.PlacesServiceStatus.OK) {
-            
-          console.log(status);
+        autocompleteService.getPlacePredictions({
+          input: input,
+          type: type,
+          componentRestrictions: countryCode ? {
+            country: countryCode
+          } : undefined
+        }, function(result, status) {
+
+          if (status == google.maps.places.PlacesServiceStatus.OK) {
+
+            console.log(status);
+            dfd.resolve(result);
+          } else
+            dfd.reject(status);
+        });
+
+        return dfd.promise;
+      },
+      /**
+       * Gets the details of a placeId
+       * @param required placeId
+       */
+      getDetails: function(placeId) {
+
+        var dfd = $q.defer();
+
+        detailsService.getDetails({
+          placeId: placeId
+        }, function(result) {
+
           dfd.resolve(result);
-        }
-        else
-          dfd.reject(status);
-      });
+        });
 
-      return dfd.promise;
-    },
-    /**
-     * Gets the details of a placeId
-     * @param required placeId
-     */
-    getDetails: function(placeId) {
-        
-      var dfd = $q.defer();
-      
-      detailsService.getDetails({ placeId: placeId }, function(result) {
-          
-        dfd.resolve(result);
-      });
-      
-      return dfd.promise;
-    }
-  };
-}])
+        return dfd.promise;
+      }
+    };
+  }])
